@@ -1,0 +1,10 @@
+# Secrets
+php/config.php
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
