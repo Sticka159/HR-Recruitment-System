@@ -39,7 +39,7 @@ async function login() {
 
         if (result.success) {
 
-            window.location.href = "index.html";
+            window.location.href = "app.html";
 
         } else {
 
