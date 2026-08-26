@@ -12,7 +12,7 @@ export async function checkAuth() {
         if (!data.authenticated) {
 
             window.location.href =
-                "login.html";
+                "/index.html";
 
             return null;
         }
@@ -27,7 +27,7 @@ export async function checkAuth() {
         );
 
         window.location.href =
-            "login.html";
+            "/index.html";
 
         return null;
     }
