@@ -1,52 +1,81 @@
 <?php
 
-require 'db.php';
-
 session_start();
 
-header('Content-Type: application/json');
+$tenantId =
+    getenv('ENTRA_TENANT_ID');
 
-$username = $_POST['username'] ?? '';
-$password = $_POST['password'] ?? '';
+$clientId =
+    getenv('ENTRA_CLIENT_ID');
 
-$sql = "
-    SELECT *
-    FROM Users
-    WHERE Username = ?
-";
-
-$stmt = sqlsrv_query(
-    $conn,
-    $sql,
-    [$username]
-);
-
-$user = sqlsrv_fetch_array(
-    $stmt,
-    SQLSRV_FETCH_ASSOC
-);
+$redirectUri =
+    getenv('ENTRA_REDIRECT_URI');
 
 if (
-    $user &&
-    $user['PasswordHash'] === $password
+    !$tenantId ||
+    !$clientId ||
+    !$redirectUri
 ) {
 
-    $_SESSION['user_id'] =
-        $user['Id'];
+    http_response_code(500);
 
-    $_SESSION['role'] =
-        $user['Role'];
+    echo "Entra ID configuration is missing.";
 
-    $_SESSION['department'] =
-        $user['Department'];
-
-    echo json_encode([
-        "success" => true
-    ]);
-
-} else {
-
-    echo json_encode([
-        "success" => false
-    ]);
+    exit;
 }
+
+$state =
+    bin2hex(
+        random_bytes(32)
+    );
+
+$nonce =
+    bin2hex(
+        random_bytes(32)
+    );
+
+$_SESSION['entra_state'] =
+    $state;
+
+$_SESSION['entra_nonce'] =
+    $nonce;
+
+$authorizeUrl =
+    'https://login.microsoftonline.com/'
+    . rawurlencode($tenantId)
+    . '/oauth2/v2.0/authorize';
+
+$params = [
+
+    'client_id' =>
+        $clientId,
+
+    'response_type' =>
+        'code',
+
+    'redirect_uri' =>
+        $redirectUri,
+
+    'response_mode' =>
+        'query',
+
+    'scope' =>
+        'openid profile email',
+
+    'state' =>
+        $state,
+
+    'nonce' =>
+        $nonce
+];
+
+header(
+    'Location: '
+    . $authorizeUrl
+    . '?'
+    . http_build_query(
+        $params
+    )
+);
+
+exit;
