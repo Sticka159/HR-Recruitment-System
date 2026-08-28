@@ -226,6 +226,29 @@ if (
     exit;
 }
 
+
+/*
+ * =====================================================
+ * DEBUG - SHOW ENTRA CLAIMS
+ * =====================================================
+ */
+
+header(
+    'Content-Type: text/html; charset=utf-8'
+);
+
+echo '<pre>';
+print_r($claims);
+echo '</pre>';
+
+exit;
+
+
+/*
+ * =====================================================
+ * NORMAL LOGIN - TEMPORARILY DISABLED
+ * =====================================================
+
 $_SESSION['entra_claims'] =
     $claims;
 
@@ -237,3 +260,5 @@ header(
 );
 
 exit;
+
+*/
