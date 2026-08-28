@@ -62,6 +62,13 @@ if (
     exit;
 }
 
+
+/*
+ * =====================================================
+ * REQUEST TOKEN
+ * =====================================================
+ */
+
 $tokenUrl =
     'https://login.microsoftonline.com/'
     . rawurlencode($tenantId)
@@ -167,11 +174,11 @@ if (
 $idToken =
     $tokenData['id_token'];
 
+
 /*
- * ID token parsing.
- *
- * Validation of the token signature and claims
- * will be added before this is used in production.
+ * =====================================================
+ * PARSE ID TOKEN
+ * =====================================================
  */
 
 $parts =
@@ -229,25 +236,121 @@ if (
 
 /*
  * =====================================================
- * DEBUG - SHOW ENTRA CLAIMS
+ * GET USER EMAIL
  * =====================================================
  */
 
-header(
-    'Content-Type: text/html; charset=utf-8'
-);
+$email =
+    $claims['preferred_username']
+    ?? $claims['email']
+    ?? '';
 
-echo '<pre>';
-print_r($claims);
-echo '</pre>';
+$email =
+    strtolower(
+        trim($email)
+    );
 
-exit;
+if ($email === '') {
+
+    http_response_code(403);
+
+    echo "No email address was provided by Entra ID.";
+
+    exit;
+}
 
 
 /*
  * =====================================================
- * NORMAL LOGIN - TEMPORARILY DISABLED
+ * DATABASE CONNECTION
  * =====================================================
+ */
+
+require_once __DIR__ . '/../db.php';
+
+if ($conn === false) {
+
+    http_response_code(500);
+
+    echo "Database connection failed.";
+
+    exit;
+}
+
+
+/*
+ * =====================================================
+ * FIND USER
+ * =====================================================
+ */
+
+$sql = "
+    SELECT
+        Id,
+        Username,
+        Role,
+        Department,
+        Email
+    FROM dbo.Users
+    WHERE LOWER(Email) = ?
+";
+
+$params = [
+    $email
+];
+
+$stmt =
+    sqlsrv_query(
+        $conn,
+        $sql,
+        $params
+    );
+
+if ($stmt === false) {
+
+    http_response_code(500);
+
+    echo "Database query failed.";
+
+    exit;
+}
+
+$user =
+    sqlsrv_fetch_array(
+        $stmt,
+        SQLSRV_FETCH_ASSOC
+    );
+
+if (!$user) {
+
+    http_response_code(403);
+
+    echo "User is not authorized to access this application.";
+
+    exit;
+}
+
+
+/*
+ * =====================================================
+ * CREATE APPLICATION SESSION
+ * =====================================================
+ */
+
+$_SESSION['user_id'] =
+    $user['Id'];
+
+$_SESSION['username'] =
+    $user['Username'];
+
+$_SESSION['role'] =
+    $user['Role'];
+
+$_SESSION['department'] =
+    $user['Department'];
+
+$_SESSION['email'] =
+    $user['Email'];
 
 $_SESSION['entra_claims'] =
     $claims;
@@ -255,10 +358,15 @@ $_SESSION['entra_claims'] =
 $_SESSION['entra_authenticated'] =
     true;
 
+
+/*
+ * =====================================================
+ * LOGIN SUCCESS
+ * =====================================================
+ */
+
 header(
     'Location: ../../app.html'
 );
 
 exit;
-
-*/

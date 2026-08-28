@@ -20,6 +20,26 @@ async function init() {
 
     setUser(user);
 
+    console.log(
+        "Přihlášený uživatel:",
+        user
+    );
+
+    console.log(
+        "Přiřazená role:",
+        user.role
+    );
+
+    console.log(
+        "Středisko:",
+        user.department
+    );
+
+    console.log(
+        "Email:",
+        user.email
+    );
+
     initModal(user);
 
     initViewSwitch();
