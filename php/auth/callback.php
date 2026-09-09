@@ -2,16 +2,90 @@
 
 session_start();
 
-file_put_contents(
-    __DIR__ . '/callback.log',
-    date('Y-m-d H:i:s') . " CALLBACK\n",
-    FILE_APPEND
+
+/*
+ * =====================================================
+ * DEBUG - SESSION / STATE
+ * =====================================================
+ */
+
+error_log(
+    'ENTRA CALLBACK: session_id='
+    . substr(
+        hash(
+            'sha256',
+            session_id()
+        ),
+        0,
+        12
+    )
 );
+
+error_log(
+    'ENTRA CALLBACK: method='
+    . ($_SERVER['REQUEST_METHOD'] ?? 'unknown')
+);
+
+error_log(
+    'ENTRA CALLBACK: post_code='
+    . (isset($_POST['code']) ? 'YES' : 'NO')
+);
+
+error_log(
+    'ENTRA CALLBACK: post_state='
+    . (isset($_POST['state']) ? 'YES' : 'NO')
+);
+
+error_log(
+    'ENTRA CALLBACK: session_state='
+    . (isset($_SESSION['entra_state']) ? 'YES' : 'NO')
+);
+
+if (isset($_POST['state'])) {
+
+    error_log(
+        'ENTRA CALLBACK: received_state_hash='
+        . substr(
+            hash(
+                'sha256',
+                $_POST['state']
+            ),
+            0,
+            12
+        )
+    );
+}
+
+if (isset($_SESSION['entra_state'])) {
+
+    error_log(
+        'ENTRA CALLBACK: stored_state_hash='
+        . substr(
+            hash(
+                'sha256',
+                $_SESSION['entra_state']
+            ),
+            0,
+            12
+        )
+    );
+}
+
+
+/*
+ * =====================================================
+ * VALIDATE AUTHENTICATION RESPONSE
+ * =====================================================
+ */
 
 if (
     !isset($_POST['code']) ||
     !isset($_POST['state'])
 ) {
+
+    error_log(
+        'ENTRA CALLBACK: missing code or state'
+    );
 
     http_response_code(400);
 
@@ -19,6 +93,13 @@ if (
 
     exit;
 }
+
+
+/*
+ * =====================================================
+ * VALIDATE SECURITY STATE
+ * =====================================================
+ */
 
 if (
     !isset($_SESSION['entra_state']) ||
@@ -28,6 +109,10 @@ if (
     )
 ) {
 
+    error_log(
+        'ENTRA CALLBACK: STATE VALIDATION FAILED'
+    );
+
     http_response_code(400);
 
     echo "Invalid authentication state.";
@@ -35,12 +120,31 @@ if (
     exit;
 }
 
+error_log(
+    'ENTRA CALLBACK: STATE VALIDATION OK'
+);
+
+
 unset(
     $_SESSION['entra_state']
 );
 
+
+/*
+ * =====================================================
+ * GET AUTHORIZATION CODE
+ * =====================================================
+ */
+
 $code =
     $_POST['code'];
+
+
+/*
+ * =====================================================
+ * ENTRA ID CONFIGURATION
+ * =====================================================
+ */
 
 $tenantId =
     getenv('ENTRA_TENANT_ID');
@@ -60,6 +164,10 @@ if (
     !$clientSecret ||
     !$redirectUri
 ) {
+
+    error_log(
+        'ENTRA CALLBACK: Entra configuration missing'
+    );
 
     http_response_code(500);
 
@@ -151,12 +259,17 @@ if (
     $curlError
 ) {
 
+    error_log(
+        'ENTRA CALLBACK: token request failed'
+    );
+
     http_response_code(500);
 
     echo "Token request failed.";
 
     exit;
 }
+
 
 $tokenData =
     json_decode(
@@ -170,12 +283,21 @@ if (
     empty($tokenData['id_token'])
 ) {
 
+    error_log(
+        'ENTRA CALLBACK: token response invalid, HTTP '
+        . $httpCode
+    );
+
     http_response_code(500);
 
     echo "Authentication failed.";
 
     exit;
 }
+
+error_log(
+    'ENTRA CALLBACK: token request OK'
+);
 
 $idToken =
     $tokenData['id_token'];
@@ -196,6 +318,10 @@ $parts =
 if (
     count($parts) !== 3
 ) {
+
+    error_log(
+        'ENTRA CALLBACK: invalid ID token'
+    );
 
     http_response_code(500);
 
@@ -232,6 +358,10 @@ if (
     !is_array($claims)
 ) {
 
+    error_log(
+        'ENTRA CALLBACK: invalid identity information'
+    );
+
     http_response_code(500);
 
     echo "Invalid identity information.";
@@ -258,12 +388,20 @@ $email =
 
 if ($email === '') {
 
+    error_log(
+        'ENTRA CALLBACK: no email in claims'
+    );
+
     http_response_code(403);
 
     echo "No email address was provided by Entra ID.";
 
     exit;
 }
+
+error_log(
+    'ENTRA CALLBACK: email received'
+);
 
 
 /*
@@ -275,6 +413,10 @@ if ($email === '') {
 require_once __DIR__ . '/../db.php';
 
 if ($conn === false) {
+
+    error_log(
+        'ENTRA CALLBACK: database connection failed'
+    );
 
     http_response_code(500);
 
@@ -314,6 +456,10 @@ $stmt =
 
 if ($stmt === false) {
 
+    error_log(
+        'ENTRA CALLBACK: database query failed'
+    );
+
     http_response_code(500);
 
     echo "Database query failed.";
@@ -328,6 +474,10 @@ $user =
     );
 
 if (!$user) {
+
+    error_log(
+        'ENTRA CALLBACK: user not found'
+    );
 
     http_response_code(403);
 
@@ -363,6 +513,10 @@ $_SESSION['entra_claims'] =
 
 $_SESSION['entra_authenticated'] =
     true;
+
+error_log(
+    'ENTRA CALLBACK: LOGIN SUCCESS'
+);
 
 
 /*
