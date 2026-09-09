@@ -9,8 +9,8 @@ file_put_contents(
 );
 
 if (
-    !isset($_GET['code']) ||
-    !isset($_GET['state'])
+    !isset($_POST['code']) ||
+    !isset($_POST['state'])
 ) {
 
     http_response_code(400);
@@ -24,7 +24,7 @@ if (
     !isset($_SESSION['entra_state']) ||
     !hash_equals(
         $_SESSION['entra_state'],
-        $_GET['state']
+        $_POST['state']
     )
 ) {
 
@@ -40,7 +40,7 @@ unset(
 );
 
 $code =
-    $_GET['code'];
+    $_POST['code'];
 
 $tenantId =
     getenv('ENTRA_TENANT_ID');

@@ -122,7 +122,7 @@ $params = [
         $redirectUri,
 
     'response_mode' =>
-        'query',
+        'form_post',
 
     'scope' =>
         'openid profile email',
