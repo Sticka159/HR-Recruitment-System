@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * =====================================================
+ * SESSION CONFIGURATION
+ * =====================================================
+ */
+
 ini_set(
     'session.cookie_samesite',
     'None'
@@ -10,7 +16,20 @@ ini_set(
     '1'
 );
 
+ini_set(
+    'session.cookie_httponly',
+    '1'
+);
+
 session_start();
+
+/*
+ * Create a fresh session ID.
+ * This ensures the browser receives a new cookie
+ * with the SameSite=None and Secure attributes.
+ */
+
+session_regenerate_id(true);
 
 
 /*
