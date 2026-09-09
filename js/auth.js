@@ -3,7 +3,7 @@ export async function checkAuth() {
     try {
 
         const res = await fetch(
-            "../php/checkAuth.php"
+            "./php/checkAuth.php"
         );
 
         const data =
