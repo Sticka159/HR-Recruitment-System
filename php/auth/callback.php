@@ -2,6 +2,12 @@
 
 session_start();
 
+file_put_contents(
+    __DIR__ . '/callback.log',
+    date('Y-m-d H:i:s') . " CALLBACK\n",
+    FILE_APPEND
+);
+
 if (
     !isset($_GET['code']) ||
     !isset($_GET['state'])
