@@ -460,6 +460,27 @@ if ($stmt === false) {
         'ENTRA CALLBACK: database query failed'
     );
 
+    $sqlErrors =
+        sqlsrv_errors();
+
+    if ($sqlErrors !== false) {
+
+        foreach ($sqlErrors as $error) {
+
+            error_log(
+                'SQL ERROR: '
+                . 'SQLSTATE='
+                . ($error['SQLSTATE'] ?? 'unknown')
+                . ' '
+                . 'CODE='
+                . ($error['code'] ?? 'unknown')
+                . ' '
+                . 'MESSAGE='
+                . ($error['message'] ?? 'unknown')
+            );
+        }
+    }
+
     http_response_code(500);
 
     echo "Database query failed.";
