@@ -6,6 +6,13 @@ header(
     'Content-Type: application/json; charset=utf-8'
 );
 
+
+/*
+ * =====================================================
+ * CHECK AUTHENTICATION
+ * =====================================================
+ */
+
 if (
     !isset($_SESSION['entra_authenticated']) ||
     $_SESSION['entra_authenticated'] !== true
@@ -18,17 +25,31 @@ if (
     exit;
 }
 
-$claims =
-    $_SESSION['entra_claims'] ?? [];
+
+/*
+ * =====================================================
+ * RETURN APPLICATION USER DATA
+ * =====================================================
+ */
 
 echo json_encode([
-    "authenticated" => true,
+    "authenticated" =>
+        true,
+
     "role" =>
-        $claims['role']
-        ?? $claims['roles'][0]
-            ?? "",
+        $_SESSION['role']
+        ?? "",
+
     "department" =>
-        $claims['department']
+        $_SESSION['department']
+        ?? "",
+
+    "email" =>
+        $_SESSION['email']
+        ?? "",
+
+    "username" =>
+        $_SESSION['username']
         ?? ""
 ]);
 
